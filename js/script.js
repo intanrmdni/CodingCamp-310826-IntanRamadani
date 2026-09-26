@@ -16,6 +16,17 @@ const CATEGORY_COLORS = {
 
 const STORAGE_KEY = "expense_transactions";
 
+// Feature 1: Sort
+let currentSort = "date-desc";
+const SORT_STORAGE_KEY = "expense_sort";
+
+// Feature 2: Theme
+const THEME_STORAGE_KEY = "expense_theme";
+
+// Feature 3: Spending limit
+const LIMIT_STORAGE_KEY = "expense_limit";
+let spendingLimit = 0;
+
 // =============================================================================
 // UTILITY FUNCTIONS
 // =============================================================================
@@ -348,6 +359,7 @@ function calculateTotal(txns) {
 
 /**
  * renderBalance — updates the balance display element.
+ * Also triggers the spending limit warning check (Feature 3).
  * @param {Array} txns
  */
 function renderBalance(txns) {
@@ -355,6 +367,7 @@ function renderBalance(txns) {
   if (el) {
     el.textContent = "Total Balance: " + formatAmount(calculateTotal(txns));
   }
+  renderLimitWarning(txns);
 }
 
 /**
@@ -397,19 +410,28 @@ function renderTransactionItem(transaction) {
 
 /**
  * renderTransactionList — clears and rebuilds the transaction list UI.
- * Displays newest-first, capped at 1000 items.
+ * Sort order is controlled by currentSort (Feature 1), capped at 1000 items.
  * @param {Array} txns
  */
 function renderTransactionList(txns) {
   const ul = document.getElementById("transaction-list");
   if (!ul) return;
 
-  // Sort newest-first by createdAt
-  const sorted = txns.slice().sort(function (a, b) { return b.createdAt - a.createdAt; });
+  const sorted = txns.slice().sort(function (a, b) {
+    switch (currentSort) {
+      case "date-asc":    return a.createdAt - b.createdAt;
+      case "amount-desc": return b.amount - a.amount;
+      case "amount-asc":  return a.amount - b.amount;
+      case "category-asc":
+        return a.category.localeCompare(b.category);
+      case "date-desc":
+      default:
+        return b.createdAt - a.createdAt;
+    }
+  });
+
   const capped = sorted.slice(0, 1000);
-
   ul.innerHTML = "";
-
   const fragment = document.createDocumentFragment();
   capped.forEach(function (t) {
     fragment.appendChild(renderTransactionItem(t));
@@ -472,7 +494,7 @@ function updateChart(categoryTotals) {
           data: data,
           backgroundColor: colors,
           borderWidth: 2,
-          borderColor: "#ffffff"
+          borderColor: document.body.classList.contains("dark") ? "#1e2235" : "#ffffff"
         }]
       },
       options: {
@@ -518,6 +540,150 @@ function renderChart(txns) {
     hideChartPlaceholder();
     updateChart(aggregateByCategory(txns));
   }
+}
+
+// =============================================================================
+// FEATURE 1: SORT TRANSACTIONS
+// =============================================================================
+
+/**
+ * handleSortChange — updates currentSort and re-renders the list.
+ * @param {Event} event
+ */
+function handleSortChange(event) {
+  currentSort = event.target.value;
+  try {
+    localStorage.setItem(SORT_STORAGE_KEY, currentSort);
+  } catch (e) { /* ignore */ }
+  renderTransactionList(transactions);
+}
+
+// =============================================================================
+// FEATURE 2: DARK / LIGHT MODE
+// =============================================================================
+
+/**
+ * applyTheme — applies 'dark' or 'light' class to <body> and updates the toggle button label.
+ * @param {'dark'|'light'} theme
+ */
+function applyTheme(theme) {
+  if (theme === "dark") {
+    document.body.classList.add("dark");
+    const btn = document.getElementById("theme-toggle");
+    if (btn) {
+      btn.setAttribute("aria-label", "Switch to light mode");
+      btn.innerHTML = "&#9728;"; // sun icon
+    }
+  } else {
+    document.body.classList.remove("dark");
+    const btn = document.getElementById("theme-toggle");
+    if (btn) {
+      btn.setAttribute("aria-label", "Switch to dark mode");
+      btn.innerHTML = "&#9790;"; // moon icon
+    }
+  }
+  // Update chart border color to match theme
+  if (spendingChart) {
+    spendingChart.data.datasets[0].borderColor = theme === "dark" ? "#1e2235" : "#ffffff";
+    spendingChart.update();
+  }
+}
+
+/**
+ * handleThemeToggle — toggles between dark and light mode and persists the preference.
+ */
+function handleThemeToggle() {
+  const isDark = document.body.classList.contains("dark");
+  const newTheme = isDark ? "light" : "dark";
+  applyTheme(newTheme);
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+  } catch (e) { /* ignore */ }
+}
+
+// =============================================================================
+// FEATURE 3: SPENDING LIMIT WARNING
+// =============================================================================
+
+/**
+ * loadSpendingLimit — reads the saved spending limit from localStorage.
+ * @returns {number}
+ */
+function loadSpendingLimit() {
+  try {
+    const raw = localStorage.getItem(LIMIT_STORAGE_KEY);
+    if (raw === null) return 0;
+    const val = parseFloat(raw);
+    return isNaN(val) || val < 0 ? 0 : val;
+  } catch (e) {
+    return 0;
+  }
+}
+
+/**
+ * saveSpendingLimit — persists the spending limit to localStorage.
+ * @param {number} limit
+ */
+function saveSpendingLimit(limit) {
+  try {
+    localStorage.setItem(LIMIT_STORAGE_KEY, String(limit));
+  } catch (e) { /* ignore */ }
+}
+
+/**
+ * renderLimitDisplay — updates the hint text below the limit input.
+ */
+function renderLimitDisplay() {
+  const el = document.getElementById("limit-display");
+  if (!el) return;
+  if (spendingLimit > 0) {
+    el.textContent = "Current limit: " + formatAmount(spendingLimit);
+  } else {
+    el.textContent = "No limit set.";
+  }
+}
+
+/**
+ * renderLimitWarning — shows or hides the over-limit warning in the header.
+ * @param {Array} txns
+ */
+function renderLimitWarning(txns) {
+  const warningEl = document.getElementById("limit-warning");
+  const textEl    = document.getElementById("limit-warning-text");
+  const balanceEl = document.getElementById("balance-display");
+  if (!warningEl || !textEl || !balanceEl) return;
+
+  const total = calculateTotal(txns);
+
+  if (spendingLimit > 0 && total > spendingLimit) {
+    const over = total - spendingLimit;
+    textEl.textContent =
+      "⚠ Spending limit exceeded by " + formatAmount(over) +
+      " (limit: " + formatAmount(spendingLimit) + ")";
+    warningEl.hidden = false;
+    balanceEl.classList.add("balance-over-limit");
+  } else {
+    warningEl.hidden = true;
+    balanceEl.classList.remove("balance-over-limit");
+  }
+}
+
+/**
+ * handleLimitSet — reads the limit input and saves the new limit.
+ */
+function handleLimitSet() {
+  const input = document.getElementById("limit-input");
+  if (!input) return;
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val < 0) {
+    spendingLimit = 0;
+  } else {
+    spendingLimit = val;
+  }
+  saveSpendingLimit(spendingLimit);
+  renderLimitDisplay();
+  renderLimitWarning(transactions);
+  input.value = "";
 }
 
 // =============================================================================
@@ -574,6 +740,31 @@ function attachEventListeners() {
   if (list) {
     list.addEventListener("click", handleDeleteClick);
   }
+
+  // Feature 1: Sort
+  const sortSelect = document.getElementById("sort-select");
+  if (sortSelect) {
+    sortSelect.addEventListener("change", handleSortChange);
+  }
+
+  // Feature 2: Theme toggle
+  const themeBtn = document.getElementById("theme-toggle");
+  if (themeBtn) {
+    themeBtn.addEventListener("click", handleThemeToggle);
+  }
+
+  // Feature 3: Spending limit
+  const limitBtn = document.getElementById("limit-set-btn");
+  if (limitBtn) {
+    limitBtn.addEventListener("click", handleLimitSet);
+  }
+  // Allow pressing Enter in the limit input to set the limit
+  const limitInput = document.getElementById("limit-input");
+  if (limitInput) {
+    limitInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); handleLimitSet(); }
+    });
+  }
 }
 
 // =============================================================================
@@ -590,6 +781,23 @@ function init() {
   }
 
   transactions = loadTransactions();
+
+  // Feature 1: Restore sort preference
+  const savedSort = localStorage.getItem(SORT_STORAGE_KEY);
+  if (savedSort) {
+    currentSort = savedSort;
+    const sortSelect = document.getElementById("sort-select");
+    if (sortSelect) sortSelect.value = currentSort;
+  }
+
+  // Feature 2: Restore theme preference
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || "light";
+  applyTheme(savedTheme);
+
+  // Feature 3: Restore spending limit
+  spendingLimit = loadSpendingLimit();
+  renderLimitDisplay();
+
   attachEventListeners();
   renderTransactionList(transactions);
   renderBalance(transactions);

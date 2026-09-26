@@ -1,0 +1,475 @@
+/* =============================================================================
+   Expense & Budget Visualizer — css/style.css
+   Mobile-first stylesheet. Single file, no frameworks.
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   RESET & BASE (Task 11.1)
+   ----------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f0f2f5;
+  color: #1a1a2e;
+  line-height: 1.6;
+  overflow-x: hidden;
+  min-width: 320px;
+}
+
+/* -----------------------------------------------------------------------------
+   ERROR BANNER — dynamically injected by JS (Task 11.1)
+   ----------------------------------------------------------------------------- */
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background-color: #c0392b;
+  color: #ffffff;
+  padding: 0.875rem 1.25rem;
+  font-size: 0.9375rem;
+  position: relative;
+  z-index: 100;
+}
+
+.error-banner p {
+  flex: 1;
+  margin: 0;
+}
+
+#error-banner-close {
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+}
+
+#error-banner-close:hover,
+#error-banner-close:focus {
+  background-color: rgba(255, 255, 255, 0.2);
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+
+/* -----------------------------------------------------------------------------
+   HEADER (Task 11.1)
+   ----------------------------------------------------------------------------- */
+
+header {
+  background-color: #2c3e8c;
+  color: #ffffff;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+header h1 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin-bottom: 0.375rem;
+}
+
+#balance-display {
+  font-size: 1.625rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #a8d8ea;
+}
+
+@media (min-width: 600px) {
+  header h1 {
+    font-size: 1.625rem;
+  }
+  #balance-display {
+    font-size: 2rem;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   MAIN LAYOUT — mobile-first (Task 11.1)
+   ----------------------------------------------------------------------------- */
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Two-column grid at ≥ 600px (Task 11.2) */
+@media (min-width: 600px) {
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "form  chart"
+      "list  list";
+    gap: 1.5rem;
+  }
+
+  #form-section  { grid-area: form; }
+  #chart-section { grid-area: chart; }
+  #list-section  { grid-area: list; }
+}
+
+/* Wide desktop at ≥ 1024px (Task 11.2) */
+@media (min-width: 1024px) {
+  main {
+    grid-template-columns: 360px 1fr;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   CARD STYLE — shared by form, chart, and list sections
+   ----------------------------------------------------------------------------- */
+
+#form-section,
+#chart-section,
+#list-section {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+}
+
+/* -----------------------------------------------------------------------------
+   FORM SECTION (Task 11.1)
+   ----------------------------------------------------------------------------- */
+
+#form-section h2,
+#list-section h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #2c3e8c;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e8ecf4;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.field-group label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.field-group input[type="text"],
+.field-group input[type="number"],
+.field-group select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.625rem 0.875rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: #1a1a2e;
+  background-color: #fafafa;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.field-group input[type="text"]:focus,
+.field-group input[type="number"]:focus,
+.field-group select:focus {
+  outline: none;
+  border-color: #2c3e8c;
+  box-shadow: 0 0 0 3px rgba(44, 62, 140, 0.15);
+  background-color: #ffffff;
+}
+
+/* Custom arrow for select */
+.field-group select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23374151' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+/* Inline validation error messages (Task 11.1) */
+.error-msg {
+  color: #dc2626;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  min-height: 1rem;
+  line-height: 1.3;
+}
+
+/* Submit button (Task 11.1, 11.2) */
+#expense-form button[type="submit"] {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+  background-color: #2c3e8c;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+#expense-form button[type="submit"]:hover {
+  background-color: #1e2d6e;
+}
+
+#expense-form button[type="submit"]:active {
+  transform: scale(0.98);
+}
+
+#expense-form button[type="submit"]:focus-visible {
+  outline: 3px solid #a8d8ea;
+  outline-offset: 2px;
+}
+
+/* -----------------------------------------------------------------------------
+   CHART SECTION (Task 11.1, 11.2)
+   ----------------------------------------------------------------------------- */
+
+#chart-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 200px;
+}
+
+#chart-section h2 {
+  align-self: flex-start;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #2c3e8c;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e8ecf4;
+  width: 100%;
+}
+
+/* Canvas container — ensures chart is responsive without overflow */
+#spending-chart {
+  width: 100% !important;
+  max-width: 360px;
+  height: auto !important;
+}
+
+#chart-placeholder {
+  color: #9ca3af;
+  font-size: 0.9375rem;
+  text-align: center;
+  padding: 2rem 1rem;
+  font-style: italic;
+}
+
+/* -----------------------------------------------------------------------------
+   LIST SECTION (Task 11.1)
+   ----------------------------------------------------------------------------- */
+
+#list-section h2 {
+  /* Already styled under shared selector above */
+}
+
+#transaction-list {
+  list-style: none;
+  max-height: 480px;
+  overflow-y: auto;
+  /* Custom scrollbar for aesthetics */
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f9fafb;
+}
+
+#transaction-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+#transaction-list::-webkit-scrollbar-track {
+  background: #f9fafb;
+  border-radius: 4px;
+}
+
+#transaction-list::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 4px;
+}
+
+/* Transaction item row */
+.transaction-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #f0f2f5;
+  transition: background-color 0.1s ease;
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-item:hover {
+  background-color: #f8f9fc;
+  border-radius: 6px;
+}
+
+/* Item name */
+.transaction-name {
+  flex: 1 1 auto;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #1a1a2e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Amount */
+.transaction-amount {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #dc2626;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Category badge / pill */
+.transaction-category {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: #ffffff;
+}
+
+.transaction-category[data-category="Food"] {
+  background-color: #FF6384;
+}
+
+.transaction-category[data-category="Transport"] {
+  background-color: #36A2EB;
+}
+
+.transaction-category[data-category="Fun"] {
+  background-color: #e6a800;  /* Darkened slightly from #FFCE56 for legibility on white text */
+}
+
+/* Delete button (Task 11.1, 11.2) */
+.delete-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.25rem;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.delete-btn:hover {
+  color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.delete-btn:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+/* Empty list state */
+#transaction-list:empty::after {
+  content: "No transactions yet. Add your first expense above.";
+  display: block;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.9375rem;
+  font-style: italic;
+  padding: 2rem 1rem;
+}
+
+/* -----------------------------------------------------------------------------
+   RESPONSIVE OVERRIDES — ensure nothing breaks at 320px (Task 11.2)
+   ----------------------------------------------------------------------------- */
+
+@media (max-width: 360px) {
+  header {
+    padding: 1rem;
+  }
+
+  header h1 {
+    font-size: 1.125rem;
+  }
+
+  #balance-display {
+    font-size: 1.375rem;
+  }
+
+  main {
+    padding: 1rem 0.75rem;
+    gap: 1rem;
+  }
+
+  #form-section,
+  #chart-section,
+  #list-section {
+    padding: 1.125rem 1rem;
+  }
+
+  .transaction-item {
+    gap: 0.5rem;
+    padding: 0.625rem 0.25rem;
+  }
+
+  .transaction-category {
+    display: none; /* Hide badge on very narrow screens to prevent overflow */
+  }
+}
